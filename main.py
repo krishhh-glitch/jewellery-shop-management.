@@ -518,20 +518,22 @@ def calculate_price():
                         print("Unsupported gold purity:", purity)
                         return
 
+                    # Gold rate is per 10 grams
+                    rate_per_gram = metal_rate / 10
+
                 elif "SILVER" in material:
 
-                    metal_rate = float(rate["silver"])
+                    # Silver rate is per kilogram
+                    rate_per_gram = float(rate["silver"]) / 1000
 
                 elif "PLATINUM" in material:
 
-                    metal_rate = float(rate["platinum"])
+                    # Platinum rate is per gram
+                    rate_per_gram = float(rate["platinum"])
 
                 else:
                     print("Unsupported metal:", material)
                     return
-
-                # Rates are per 10 grams
-                rate_per_gram = metal_rate / 10
 
                 component_value = weight * rate_per_gram
 
