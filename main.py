@@ -582,6 +582,150 @@ def calculate_price():
     except Exception as error:
         print("Price calculation failed:", error)
 
+# =====================================
+# DAILY METAL RATE MANAGEMENT
+# =====================================
+
+def view_metal_rates():
+
+    print("\n========== LATEST METAL RATES ==========")
+
+    try:
+        response = (
+            supabase.table("metal_rates")
+            .select("*")
+            .order("updated_date", desc=True)
+            .limit(1)
+            .execute()
+        )
+
+        rates = response.data
+
+        if not rates:
+            print("No metal rates available.")
+            return
+
+        rate = rates[0]
+
+        print("\nRate Date:", rate["updated_date"])
+
+        print("\nGOLD (Per 10 Grams)")
+        print("24K Gold: Rs.", rate["gold_24k"])
+        print("22K Gold: Rs.", rate["gold_22k"])
+        print("18K Gold: Rs.", rate["gold_18k"])
+
+        print("\nSILVER (Per Kilogram)")
+        print("Silver: Rs.", rate["silver"])
+
+        print("\nPLATINUM (Per Gram)")
+        print("Platinum: Rs.", rate["platinum"])
+
+        print("\n========================================")
+
+    except Exception as error:
+        print("Unable to fetch metal rates:", error)
+
+
+def update_metal_rates():
+
+    print("\n========== UPDATE DAILY METAL RATES ==========")
+
+    try:
+
+        print("\nEnter today's metal rates:")
+
+        gold_24k = float(input("24K Gold (Per 10g): Rs. "))
+        gold_22k = float(input("22K Gold (Per 10g): Rs. "))
+        gold_18k = float(input("18K Gold (Per 10g): Rs. "))
+
+        silver = float(input("Silver (Per Kg): Rs. "))
+
+        platinum = float(input("Platinum (Per Gram): Rs. "))
+
+        rates = [
+            gold_24k,
+            gold_22k,
+            gold_18k,
+            silver,
+            platinum
+        ]
+
+        if any(value <= 0 for value in rates):
+            print("All metal rates must be greater than zero.")
+            return
+
+        if not (gold_24k >= gold_22k >= gold_18k):
+            print("Gold rates must follow 24K >= 22K >= 18K.")
+            return
+
+        from datetime import date
+
+        today = date.today().isoformat()
+
+        rate_data = {
+            "gold_24k": gold_24k,
+            "gold_22k": gold_22k,
+            "gold_18k": gold_18k,
+            "silver": silver,
+            "platinum": platinum,
+            "silver_rate_unit": "per_kg",
+            "platinum_rate_unit": "per_g",
+            "updated_date": today
+        }
+
+        supabase.table("metal_rates").upsert(
+            rate_data,
+            on_conflict="updated_date"
+        ).execute()
+
+        print("\nMetal rates updated successfully!")
+        print("Date:", today)
+
+    except ValueError:
+        print("Please enter valid numeric rates.")
+
+    except Exception as error:
+        print("Unable to update metal rates:", error)
+
+# =====================================
+# VIEW METAL RATE HISTORY
+# =====================================
+
+def view_metal_rate_history():
+
+    print("\n========== METAL RATE HISTORY ==========")
+
+    try:
+
+        response = (
+            supabase.table("metal_rates")
+            .select("*")
+            .not_.is_("updated_date", "null")
+            .order("updated_date", desc=True)
+            .execute()
+        )
+
+        history = response.data
+
+        if not history:
+            print("No metal rate history available.")
+            return
+
+        for rate in history:
+
+            print("\nDate:", rate["updated_date"])
+
+            print("24K Gold (10g): Rs.", rate["gold_24k"])
+            print("22K Gold (10g): Rs.", rate["gold_22k"])
+            print("18K Gold (10g): Rs.", rate["gold_18k"])
+
+            print("Silver (1kg): Rs.", rate["silver"])
+            print("Platinum (1g): Rs.", rate["platinum"])
+
+            print("----------------------------------------")
+
+    except Exception as error:
+        print("Unable to fetch rate history:", error)
 
 # =====================================
 # MAIN MENU
@@ -603,6 +747,8 @@ def main():
         print("6. View Jewellery Components")
         print("7. Update Component Price")
         print("8. Exit")
+        print("10. View Metal Rate History")
+        print("11. Exit")
 
         choice = input("\nEnter your choice: ").strip()
 
@@ -628,11 +774,21 @@ def main():
             update_component_price()
 
         elif choice == "8":
+            view_metal_rates()
+
+        elif choice == "9":
+            update_metal_rates()
+
+        elif choice == "10":
+            view_metal_rate_history()
+
+        elif choice == "11":
             print("Thank you for using the system!")
             break
 
         else:
             print("Invalid choice! Try again.")
+            
 
 
 # =====================================
